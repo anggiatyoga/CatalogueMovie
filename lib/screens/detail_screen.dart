@@ -1,3 +1,4 @@
+import 'package:belajar_carousel/controller/DBHelper.dart';
 import 'package:belajar_carousel/model/FavoriteMovieModel.dart';
 import 'package:belajar_carousel/screens/favorite_screen.dart';
 import 'package:belajar_carousel/service/CrudOperation.dart';
@@ -16,68 +17,54 @@ class DetailScreen extends StatefulWidget {
   final String overview;
   final String releaseDate;
   final String originalLanguage;
+  final String genreIds;
+  final String keyTrailer;
 
   final FavoriteMovieModel favoriteMovie;
+  final String isFavorite;
 
-  DetailScreen({Key key, this.idDetail, this.title, this.backdropPath, this.overview, this.releaseDate, this.originalLanguage, this.favoriteMovie}) : super(key: key);
+  DetailScreen({Key key, this.idDetail, this.title, this.backdropPath, this.overview, this.releaseDate, this.originalLanguage, this.genreIds, this.keyTrailer, this.favoriteMovie, this.isFavorite}) : super(key: key);
 
   @override
-  _DetailScreenState createState() => _DetailScreenState(this.favoriteMovie);
+  _DetailScreenState createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends State<DetailScreen> {
   FavoriteMovieModel favoriteMovie;
 
-  _DetailScreenState(this.favoriteMovie);
+  _DetailScreenState();
   
   static String _idNya;
   String aaaa = _idNya;
   String urlTrailer;
   String urlDetail;
+  int iiio = 0;
 
+  //_id; _title; _poster; _backdropPath; _overview; _releaseDate; _originalLanguage;  _genreIds; _keyTrailer;
 
-  String genreIds;
-  String keyTrailer;
-
-  Icon _favoriteIcon = new Icon(Icons.favorite_border, color: Colors.white70, size: 40,);
-
-  Future<String> getDataDetail(String ididid) async {
-    urlTrailer = 'http://api.themoviedb.org/3/movie/$ididid/videos?api_key=b3d55b9965fe7810605834ceed8a62ed';
-    urlDetail = 'https://api.themoviedb.org/3/movie/$ididid?api_key=b3d55b9965fe7810605834ceed8a62ed&language=en-US';
-
-    try{
-      var res = await http.get(Uri.encodeFull(urlDetail),
-          headers: {'accept': 'application/json'});
-
-      var resTrailer = await http.get(Uri.encodeFull(urlTrailer),
-          headers: {'accept':'application/json'});
-      setState(() {
-        var content = json.decode(res.body);
-        var contentTrailer = json.decode(resTrailer.body);
-
-        genreIds = content['genres'][0]['name'];
-        keyTrailer = contentTrailer['results'][0]['key'].toString();
-
-      });
-    } catch(e) {
-      print("================");
-      print(e);
-      print("================");
-    }
-
-    return 'Succes!';
+  Future addFavoriteMovie() async{
+    var db = DBHelper();
+    var favoriteMovie = FavoriteMovieModel(int.parse(widget.idDetail), widget.title.toString(), widget.backdropPath.toString(),
+      widget.backdropPath.toString(), widget.overview.toString(), widget.releaseDate.toString(),
+      widget.originalLanguage.toString(), widget.genreIds.toString(), widget.keyTrailer.toString()
+    );
+    await db.saveFavorite(favoriteMovie);
+    print("addFavoriteMovie SAVED!");
   }
 
-//  @override
-//  void initState() {
-//    super.initState();
-//    this.getDataDetail();
-//  }
+  void deleteFavorite(int favoriteMovieId) {
+    var db = new DBHelper();
+    db.deleteFavoriteMovie(favoriteMovieId);
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-
-  getDataDetail(widget.idDetail.toString());
 
     return SingleChildScrollView(
       child: Container(
@@ -185,7 +172,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                     color: Colors.pinkAccent
                                 ),
                                 child: Text(
-                                genreIds.toString(),
+                                widget.genreIds.toString(),
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold
@@ -237,7 +224,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   .width * 0.05,
               child: GestureDetector(
                 onTap: () {
-                  _launchURL(keyTrailer.toString());
+                  _launchURL(widget.keyTrailer.toString());
                 },
                 child: Container(
                   height: 80,
@@ -271,7 +258,17 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  static int favoriteAwal = 0;
   _buildBar() {
+    favoriteAwal = int.parse(widget.isFavorite);
+    print("favoriteAwal  ==> $favoriteAwal");
+    print("AAASDAA _buildBar => $aaasdaa");
+    if((aaasdaa%2) == 1){
+      _favoriteIcon = new Icon(Icons.favorite, color: Colors.pink, size: 40);
+    } else {
+      _favoriteIcon  = new Icon(Icons.favorite_border, color: Colors.white70, size: 40,);
+    }
+//    aaasdaa = aaasdaa + 1;
     return Positioned(
         top: MediaQuery.of(context).size.height * 0.04,
         left: MediaQuery.of(context).size.width * 0.05,
@@ -281,6 +278,7 @@ class _DetailScreenState extends State<DetailScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
+//                  Navigator.push(context, MaterialPageRoute(builder: (context) => FavoriteScreen()));
                   Navigator.pop(context);
                 },
                 child: Container(
@@ -324,55 +322,54 @@ class _DetailScreenState extends State<DetailScreen> {
         ));
   }
 
-  void _favoritePressed() {
-    CrudOperation dbHelper = new CrudOperation();
-    setState(() {
-      if(favoriteMovie == null) {
-        this._favoriteIcon = new Icon(
-            Icons.favorite,
-          color: Colors.pink,
-          size: 40,
-        );
-        try{
-          favoriteMovie = FavoriteMovieModel(int.parse(widget.idDetail), widget.title.toString(), widget.backdropPath.toString());
-//        dbHelper.insert(favoriteMovie);
-          Fluttertoast.showToast(
-              msg: "ATAS SUCSES SAVE!!",
-              timeInSecForIos: 1,
-              fontSize: 16.0,
-              backgroundColor: Colors.pink,
-              textColor: Colors.white,
-              gravity: ToastGravity.CENTER,
-              toastLength: Toast.LENGTH_SHORT);
-        } catch (error) {
-          Fluttertoast.showToast(
-              msg: "ATAS GAGAL SAVE!!",
-              timeInSecForIos: 1,
-              fontSize: 16.0,
-              backgroundColor: Colors.pink,
-              textColor: Colors.white,
-              gravity: ToastGravity.CENTER,
-              toastLength: Toast.LENGTH_SHORT);
-        }
+  Icon _favoriteIcon;
+  String wasFavorite = 'notfavorite';
+  int aaasdaa = favoriteAwal;
 
-      } else {
-        this._favoriteIcon = new Icon(
-            Icons.favorite_border,
+  void _favoritePressed() {
+    setState(() {
+      aaasdaa = aaasdaa + 1;
+      print("AAASDAA favoritePressed => $aaasdaa");
+//      print("FAVORITE => ($aaasdaa) $wasFavorite ");
+      if((aaasdaa%2) == 1) {
+        _favoriteIcon = new Icon(
+          Icons.favorite_border,
           color: Colors.white,
           size: 40,
         );
+        addFavoriteMovie();
         Fluttertoast.showToast(
-            msg: "GAGAL SAVE!!",
+            msg: "BERHASIL SAVE FAVORITE!!",
+            timeInSecForIos: 1,
+            fontSize: 16.0,
+            backgroundColor: Colors.pink,
+            textColor: Colors.white,
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_SHORT
+        );
+        wasFavorite = 'favorite';
+      } else {
+        _favoriteIcon = new Icon(
+          Icons.favorite,
+          color: Colors.pink,
+          size: 40,
+        );
+        deleteFavorite(int.parse(widget.idDetail));
+        Fluttertoast.showToast(
+            msg: "HAPUS DARI FAVORITE",
             timeInSecForIos: 1,
             fontSize: 16.0,
             backgroundColor: Colors.pink,
             textColor: Colors.white,
             gravity: ToastGravity.CENTER,
             toastLength: Toast.LENGTH_SHORT);
-        favoriteMovie.id = int.parse(widget.idDetail);
-        favoriteMovie.title = widget.title.toString();
-        favoriteMovie.poster = widget.backdropPath.toString();
+
+        wasFavorite = 'notfavorite';
       }
+
     });
   }
+
+
+
 }

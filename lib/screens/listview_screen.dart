@@ -1,5 +1,8 @@
+import 'package:belajar_carousel/controller/DBHelper.dart';
+import 'package:belajar_carousel/model/FavoriteMovieModel.dart';
 import 'package:belajar_carousel/screens/detail_screen.dart';
 import 'package:belajar_carousel/screens/favorite_screen.dart';
+import 'package:belajar_carousel/service/CrudOperation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -13,6 +16,10 @@ class ListViewScreens extends StatefulWidget {
 }
 
 class _ListViewScreensState extends State<ListViewScreens> {
+//  CrudOperation dbHelper = CrudOperation();
+  DBHelper dbHelper = DBHelper();
+  Future<List<FavoriteMovieModel>> future;
+
   final TextEditingController _filter = new TextEditingController();
   final dio = new Dio();
 
@@ -26,6 +33,12 @@ class _ListViewScreensState extends State<ListViewScreens> {
   Icon _searchIcon = new Icon(Icons.search);
   Icon _launchIcon = new Icon(Icons.launch);
   Widget _appBarTitle = new Text('Search Example');
+
+  List<FavoriteMovieModel> _listFavoriteMovie = new List();
+  String genreIds;
+  String keyTrailer;
+  final String isFavorite = '2';
+  int iiio;
 
   _ListViewScreensState() {
     _filter.addListener(() {
@@ -105,11 +118,54 @@ class _ListViewScreensState extends State<ListViewScreens> {
   void initState() {
     super.initState();
     this._getData();
+    this.updateListView();
+  }
+
+  void updateListView() {
+    setState(() {
+//      future = dbHelper.getFavoriteMovieList();
+    });
+  }
+
+  Future<String> _getDataDetail(String idMovieDetails) async{
+//    print("_getDataDetail ID DETAIL ==> $idMovieDetails");
+    String urlTrailer = 'http://api.themoviedb.org/3/movie/${idMovieDetails.toString()}/videos?api_key=b3d55b9965fe7810605834ceed8a62ed';
+    String urlDetail = 'https://api.themoviedb.org/3/movie/${idMovieDetails.toString()}?api_key=b3d55b9965fe7810605834ceed8a62ed&language=en-US';
+
+    try{
+      var res = await http.get(Uri.encodeFull(urlDetail),
+          headers: {'accept': 'application/json'});
+
+      var resTrailer = await http.get(Uri.encodeFull(urlTrailer),
+          headers: {'accept':'application/json'});
+      setState(() {
+        var content = json.decode(res.body);
+        var contentTrailer = json.decode(resTrailer.body);
+
+        genreIds = content['genres'][0]['name'];
+        keyTrailer = contentTrailer['results'][0]['key'].toString();
+
+      });
+    } catch(e) {
+      print("================");
+      print(e);
+      print("================");
+
+    }
+
+    print("succes $iiio");
+    iiio = iiio + 1;
   }
 
   @override
   Widget build(BuildContext context) {
-
+//    dbHelper.getFavoriteMovieList();
+    List listDbFavorite = new List();
+    for (int i = 0; i < _listFavoriteMovie.length; i++) {
+      listDbFavorite.add(_listFavoriteMovie[i]);
+      print(listDbFavorite[i]);
+    }
+    print(dbHelper.getFavoriteMovie());
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Latihan",
@@ -206,9 +262,10 @@ class _ListViewScreensState extends State<ListViewScreens> {
         scrollDirection: Axis.horizontal,
         itemCount: namesMovie == null ? 0 : filteredFinal.length,
         itemBuilder: (BuildContext context, int index) {
+
           return GestureDetector(
             onTap: () {
-
+              _getDataDetail(filteredFinal[index]['id'].toString());
               Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -218,9 +275,10 @@ class _ListViewScreensState extends State<ListViewScreens> {
                           backdropPath: filteredFinal[index]['poster_path'].toString(),
                           overview: filteredFinal[index]['overview'].toString(),
                           releaseDate: filteredFinal[index]['release_date'].toString(),
-//                          genreIds: filteredFinal[index]['genres'][0]['name'],
+                          genreIds: genreIds.toString(),
                           originalLanguage: filteredFinal[index]['original_language'],
-//                          keyTrailer: filteredFinal[index]['results'][0]['key'].toString()
+                          keyTrailer: keyTrailer.toString(),
+                          isFavorite: isFavorite,
                       )
                   )
               );
